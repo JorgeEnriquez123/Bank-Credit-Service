@@ -61,37 +61,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /credits/{id}:
-    get:
-      summary: Obtiene un crédito por su ID.
-      tags:
-        - Credits
-      operationId: getCreditById
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID del crédito
-      responses:
-        '200':
-          description: Crédito obtenido exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreditResponse'
-        '404':
-          description: Crédito no encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Error interno del servidor
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Actualiza un crédito por su ID.
       tags:
@@ -217,7 +186,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreditResponse'
+                $ref: '#/components/schemas/BalanceResponse'
         '404':
           description: Tarjeta de crédito no encontrada
           content:
@@ -284,7 +253,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PaymentRequest'
+              $ref: '#/components/schemas/CreditPaymentRequest'
       responses:
         '200':
           description: Pago de crédito realizado exitosamente
@@ -329,7 +298,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PaymentRequest'
+              $ref: '#/components/schemas/CreditPaymentRequest'
       responses:
         '200':
           description: Pago de tarjeta de crédito realizado exitosamente
@@ -424,7 +393,7 @@ components:
           type: number
           format: decimal
           description: Monto del crédito
-        creditDate:
+        createdAt:
           type: string
           format: date-time
           description: Fecha y hora de la creación del crédito
@@ -452,6 +421,7 @@ components:
       required:
         - customerDni
         - creditType
+        - status
         - creditAmount
       properties:
         customerDni:
@@ -469,10 +439,6 @@ components:
           type: number
           format: decimal
           description: Monto del crédito
-        creditDate:
-          type: string
-          format: date-time
-          description: Fecha y hora de la creación del crédito
         availableBalance:
           type: number
           format: decimal
@@ -532,15 +498,24 @@ components:
           format: date-time
           description: Fecha y hora de la transacción
 
-    PaymentRequest:
+    CreditPaymentRequest:
       type: object
       required:
         - amount
+        - accountNumber
+        - currencyType
       properties:
         amount:
           type: number
           format: decimal
           description: Monto del pago
+        accountNumber:
+          type: string
+          description: Número de cuenta del cliente
+        currencyType:
+          type: string
+          enum: [ PEN, USD ]
+          description: Tipo de moneda
 
     ConsumptionRequest:
       type: object
@@ -551,6 +526,21 @@ components:
           type: number
           format: decimal
           description: Monto del consumo
+
+    BalanceResponse:
+      type: object
+      properties:
+        creditCardNumber:
+          type: string
+          description: Número de tarjeta de crédito
+        availableBalance:
+          type: number
+          format: decimal
+          description: monto disponible de la tarjeta de crédito para consumo
+        outstandingBalance:
+          type: number
+          format: decimal
+          description: monto que has consumido de la tarjeta de crédito
 
     ErrorResponse:
       type: object

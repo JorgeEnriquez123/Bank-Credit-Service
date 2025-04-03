@@ -164,7 +164,7 @@
 							</configOptions>
 							<typeMappings>
 								<typeMapping>DateTime=LocalDateTime</typeMapping>
-								<typeMapping>Date=LocalDate</typeMapping>
+								<typeMapping>date=LocalDate</typeMapping>
 							</typeMappings>
 							<importMappings>
 								<importMapping>LocalDateTime=java.time.LocalDateTime</importMapping>
