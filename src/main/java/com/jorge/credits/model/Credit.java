@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -13,12 +14,12 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Document(collection = "credits")
 public class Credit {
-    // Fields for the Credit class
     private String id;
     private String customerDni;
     private CreditType creditType;
     private Status status;
     private BigDecimal creditAmount;
+    private LocalDateTime createdAt;
 
     // Credit Card fields
     private BigDecimal availableBalance; // What you have left in your credit card
