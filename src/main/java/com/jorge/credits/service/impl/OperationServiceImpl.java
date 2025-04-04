@@ -13,6 +13,7 @@ import com.jorge.credits.webclient.client.TransactionClient;
 import com.jorge.credits.webclient.model.AccountBalanceUpdateRequest;
 import com.jorge.credits.webclient.model.TransactionRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,15 +24,16 @@ import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OperationServiceImpl implements OperationService {
     private final AccountClient accountClient;
     private final TransactionClient transactionClient;
     private final CreditMapper creditMapper;
     private final CreditRepository creditRepository;
-    private final CustomerClient customerClient;
 
     @Override
     public Flux<TransactionResponse> getTransactionsByCreditId(String creditId) {
+        log.info("Fetching transactions by credit id: {}", creditId);
         return transactionClient.getTransactionsByCreditId(creditId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No transactions found with credit id: " + creditId)));
@@ -39,6 +41,7 @@ public class OperationServiceImpl implements OperationService {
 
     @Override
     public Mono<CreditResponse> payCreditById(String creditId, CreditPaymentRequest creditPaymentRequest) {
+        log.info("Paying credit with id: {} using account number: {}, amount: {}", creditId, creditPaymentRequest.getAccountNumber(), creditPaymentRequest.getAmount());
         return creditRepository.findById(creditId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit with id " + creditId + " not found")))
                 .flatMap(credit -> {
@@ -84,6 +87,7 @@ public class OperationServiceImpl implements OperationService {
 
     @Override
     public Mono<CreditResponse> payCreditCardByCreditCardNumber(String creditCardNumber, CreditPaymentRequest creditPaymentRequest) {
+        log.info("Paying credit card with number: {} using account number: {}, amount: {}", creditCardNumber, creditPaymentRequest.getAccountNumber(), creditPaymentRequest.getAmount());
         return creditRepository.findByCreditCardNumber(creditCardNumber)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit card with number " + creditCardNumber + " not found")))
                 .flatMap(credit -> {
@@ -126,6 +130,7 @@ public class OperationServiceImpl implements OperationService {
 
     @Override
     public Mono<CreditResponse> consumeCreditCardByCreditCardNumber(String creditCardNumber, BigDecimal amount) {
+        log.info("Consuming credit card with number: {}, amount: {}", creditCardNumber, amount);
         return creditRepository.findByCreditCardNumber(creditCardNumber)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit card with number " + creditCardNumber + " not found")))
                 .flatMap(credit -> {

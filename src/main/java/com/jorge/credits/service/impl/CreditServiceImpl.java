@@ -10,6 +10,7 @@ import com.jorge.credits.service.CreditService;
 import com.jorge.credits.webclient.client.CustomerClient;
 import com.jorge.credits.webclient.model.CustomerResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CreditServiceImpl implements CreditService {
     private final CustomerClient customerClient;
     private final CreditMapper creditMapper;
@@ -28,12 +30,14 @@ public class CreditServiceImpl implements CreditService {
 
     @Override
     public Flux<CreditResponse> getAllCredits() {
+        log.info("Fetching all credits");
         return creditRepository.findAll()
                 .map(creditMapper::mapToCreditResponse);
     }
 
     @Override
     public Flux<CreditResponse> getCreditsByCustomerDni(String customerDni) {
+        log.info("Fetching credits by customer DNI: {}", customerDni);
         return creditRepository.findByCustomerDni(customerDni)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Credit card from Customer by Dni: " + customerDni + " not found")))
@@ -42,6 +46,7 @@ public class CreditServiceImpl implements CreditService {
 
     @Override
     public Mono<BalanceResponse> getCreditCardAvailableBalanceByCreditCardNumber(String creditCardNumber) {
+        log.info("Fetching available balance for credit card number: {}", creditCardNumber);
         return creditRepository.findByCreditCardNumber(creditCardNumber)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Credit card with card number: " + creditCardNumber + " not found")))
@@ -56,7 +61,7 @@ public class CreditServiceImpl implements CreditService {
 
     @Override
     public Mono<CreditResponse> createCredit(CreditRequest creditRequest) {
-
+        log.info("Creating a new credit for customer DNI: {}", creditRequest.getCustomerDni());
         Credit credit = creditMapper.mapToCredit(creditRequest);
         credit.setCreatedAt(LocalDateTime.now());
 
@@ -90,11 +95,13 @@ public class CreditServiceImpl implements CreditService {
     }
     @Override
     public Mono<Void> deleteCreditById(String id) {
+        log.info("Deleting credit with id: {}", id);
         return creditRepository.deleteById(id);
     }
 
     @Override
     public Mono<CreditResponse> updateCreditById(String id, CreditRequest creditRequest) {
+        log.info("Updating credit with id: {}", id);
         return creditRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Credit with id: " + id + " not found")))
