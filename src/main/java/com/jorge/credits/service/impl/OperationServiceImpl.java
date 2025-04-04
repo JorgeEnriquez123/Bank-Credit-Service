@@ -90,15 +90,8 @@ public class OperationServiceImpl implements OperationService {
         log.info("Paying credit card with number: {} using account number: {}, amount: {}", creditCardNumber, creditPaymentRequest.getAccountNumber(), creditPaymentRequest.getAmount());
         return creditRepository.findByCreditCardNumber(creditCardNumber)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit card with number " + creditCardNumber + " not found")))
+                .flatMap(this::validateCreditCard)
                 .flatMap(credit -> {
-                    if (credit.getStatus() != Credit.Status.ACTIVE) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit card is not active"));
-                    }
-
-                    if (credit.getCreditType() != Credit.CreditType.PERSONAL_CREDIT_CARD && credit.getCreditType() != Credit.CreditType.BUSINESS_CREDIT_CARD) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit is not a credit card"));
-                    }
-
                     BigDecimal newOutstandingBalance = credit.getOutstandingBalance().subtract(creditPaymentRequest.getAmount());
 
                     if (newOutstandingBalance.compareTo(BigDecimal.ZERO) < 0) {
@@ -133,14 +126,8 @@ public class OperationServiceImpl implements OperationService {
         log.info("Consuming credit card with number: {}, amount: {}", creditCardNumber, amount);
         return creditRepository.findByCreditCardNumber(creditCardNumber)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Credit card with number " + creditCardNumber + " not found")))
+                .flatMap(this::validateCreditCard)
                 .flatMap(credit -> {
-                    if (credit.getStatus() != Credit.Status.ACTIVE) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit card is not active"));
-                    }
-
-                    if (credit.getCreditType() != Credit.CreditType.PERSONAL_CREDIT_CARD && credit.getCreditType() != Credit.CreditType.BUSINESS_CREDIT_CARD) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit is not a credit card"));
-                    }
 
                     if (credit.getAvailableBalance().compareTo(amount) < 0) {
                         return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient available balance"));
@@ -173,6 +160,13 @@ public class OperationServiceImpl implements OperationService {
         return getTransactionRequest(creditId, amount, transactionType, description, transactionRequest);
     }
 
+    private TransactionRequest createCreditCartTransactionRequest(String creditId, BigDecimal amount,
+                                                                  TransactionRequest.TransactionType transactionType,
+                                                                  String description) {
+        TransactionRequest transactionRequest = new TransactionRequest();
+        return getTransactionRequest(creditId, amount, transactionType, description, transactionRequest);
+    }
+
     private TransactionRequest getTransactionRequest(String creditId, BigDecimal amount, TransactionRequest.TransactionType transactionType, String description, TransactionRequest transactionRequest) {
         transactionRequest.setCreditId(creditId);
         transactionRequest.setAmount(amount);
@@ -184,10 +178,15 @@ public class OperationServiceImpl implements OperationService {
         return transactionRequest;
     }
 
-    private TransactionRequest createCreditCartTransactionRequest(String creditId, BigDecimal amount,
-                                                        TransactionRequest.TransactionType transactionType,
-                                                        String description) {
-        TransactionRequest transactionRequest = new TransactionRequest();
-        return getTransactionRequest(creditId, amount, transactionType, description, transactionRequest);
+    private Mono<Credit> validateCreditCard(Credit credit) {
+        if (credit.getStatus() != Credit.Status.ACTIVE) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit card is not active"));
+        }
+
+        if (credit.getCreditType() != Credit.CreditType.PERSONAL_CREDIT_CARD && credit.getCreditType() != Credit.CreditType.BUSINESS_CREDIT_CARD) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Credit is not a credit card"));
+        }
+
+        return Mono.just(credit);
     }
 }
